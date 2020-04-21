@@ -9,6 +9,9 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Process;
 import android.util.Log;
@@ -92,6 +95,18 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
       intent.putExtra(EXTRA_REMOTE_MESSAGE, remoteMessage);
       LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     } else {
+      Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+      MediaPlayer mp =MediaPlayer.create(getBaseContext(), alert);
+      if(mp !=null) {
+        mp.setVolume(100, 100);
+        mp.start();
+        mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+          @Override
+          public void onCompletion(MediaPlayer mp) {
+            mp.release();
+          }
+        });
+      }
       // If background isolate is not running yet, put message in queue and it will be handled
       // when the isolate starts.
       if (!isIsolateRunning.get()) {
