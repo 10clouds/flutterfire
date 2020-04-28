@@ -9,6 +9,7 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
@@ -99,9 +100,26 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
     } else {
       Log.d("NewVoice", "background");
         try {
-            Uri alarmRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-            Ringtone ringtone = RingtoneManager.getRingtone(getApplicationContext(), alarmRingtoneUri);
-            ringtone.play();
+          Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+          final MediaPlayer mp = MediaPlayer.create(getBaseContext(), alert);
+          if(mp !=null) {
+            mp.setVolume(100, 100);
+            mp.start();
+            new Handler(getMainLooper())
+                    .postDelayed(
+                            new Runnable() {
+                              @Override
+                              public void run() {
+                                mp.stop();
+                              }
+                            }, 60 * 60 * 10);
+            mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+              @Override
+              public void onCompletion(MediaPlayer mp) {
+                mp.release();
+              }
+            });
+          }
             Log.d("NewVoice", "playing sound");
         } catch (Exception e) {
             Log.e("NewVoice", e.getLocalizedMessage());
@@ -110,14 +128,17 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
       // If background isolate is not running yet, put message in queue and it will be handled
       // when the isolate starts.
       if (!isIsolateRunning.get()) {
+        Log.d("NewVoice", "isIsolateRunning");
         backgroundMessageQueue.add(remoteMessage);
       } else {
+        Log.d("NewVoice", "CountDownLatch");
         final CountDownLatch latch = new CountDownLatch(1);
         new Handler(getMainLooper())
             .post(
                 new Runnable() {
                   @Override
                   public void run() {
+                    Log.d("NewVoice", "executeDartCallbackInBackgroundIsolate");
                     executeDartCallbackInBackgroundIsolate(
                         FlutterFirebaseMessagingService.this, remoteMessage, latch);
                   }
