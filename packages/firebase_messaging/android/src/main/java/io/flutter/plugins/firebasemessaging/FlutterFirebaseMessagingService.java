@@ -98,57 +98,51 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
       intent.putExtra(EXTRA_REMOTE_MESSAGE, remoteMessage);
       LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     } else {
-      Log.d("NewVoice", "background");
-        try {
-          Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-          final MediaPlayer mp = MediaPlayer.create(getBaseContext(), alert);
-          if(mp !=null) {
-            mp.setVolume(100, 100);
-            mp.start();
-            new Handler(getMainLooper())
-                    .postDelayed(
-                            new Runnable() {
-                              @Override
-                              public void run() {
-                                mp.stop();
-                              }
-                            }, 60 * 60 * 10);
-            mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-              @Override
-              public void onCompletion(MediaPlayer mp) {
-                mp.release();
-              }
-            });
-          }
-            Log.d("NewVoice", "playing sound");
-        } catch (Exception e) {
-            Log.e("NewVoice", e.getLocalizedMessage());
-            e.printStackTrace();
-        }
-      // If background isolate is not running yet, put message in queue and it will be handled
-      // when the isolate starts.
-      if (!isIsolateRunning.get()) {
-        Log.d("NewVoice", "isIsolateRunning");
-        backgroundMessageQueue.add(remoteMessage);
-      } else {
-        Log.d("NewVoice", "CountDownLatch");
-        final CountDownLatch latch = new CountDownLatch(1);
-        new Handler(getMainLooper())
-            .post(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    Log.d("NewVoice", "executeDartCallbackInBackgroundIsolate");
-                    executeDartCallbackInBackgroundIsolate(
-                        FlutterFirebaseMessagingService.this, remoteMessage, latch);
-                  }
-                });
-        try {
-          latch.await();
-        } catch (InterruptedException ex) {
-          Log.i(TAG, "Exception waiting to execute Dart callback", ex);
-        }
+      final CountDownLatch latch = new CountDownLatch(1);
+      new Handler(getMainLooper())
+          .post(
+              new Runnable() {
+                @Override
+                public void run() {
+                  playSound();
+                  executeDartCallbackInBackgroundIsolate(
+                      FlutterFirebaseMessagingService.this, remoteMessage, latch);
+                }
+              });
+      try {
+        latch.await();
+      } catch (InterruptedException ex) {
+        Log.i(TAG, "Exception waiting to execute Dart callback", ex);
       }
+    }
+  }
+
+  private void playSound() {
+    try {
+      Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+      final MediaPlayer mp = MediaPlayer.create(getBaseContext(), alert);
+      if(mp !=null) {
+        mp.setVolume(100, 100);
+        mp.start();
+        new Handler(getMainLooper())
+                .postDelayed(
+                        new Runnable() {
+                          @Override
+                          public void run() {
+                            mp.stop();
+                          }
+                        }, 60 * 60 * 10);
+        mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+          @Override
+          public void onCompletion(MediaPlayer mp) {
+            mp.release();
+          }
+        });
+      }
+        Log.d("NewVoice", "playing sound");
+    } catch (Exception e) {
+        Log.e("NewVoice", e.getLocalizedMessage());
+        e.printStackTrace();
     }
   }
 
