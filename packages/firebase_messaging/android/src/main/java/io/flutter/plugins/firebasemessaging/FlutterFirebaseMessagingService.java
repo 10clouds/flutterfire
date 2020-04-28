@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
+import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Handler;
@@ -91,22 +92,21 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
     // If application is running in the foreground use local broadcast to handle message.
     // Otherwise use the background isolate to handle message.
     if (isApplicationForeground(this)) {
+      Log.d("NewVoice", "foreground");
       Intent intent = new Intent(ACTION_REMOTE_MESSAGE);
       intent.putExtra(EXTRA_REMOTE_MESSAGE, remoteMessage);
       LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     } else {
-      Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-      MediaPlayer mp =MediaPlayer.create(getBaseContext(), alert);
-      if(mp !=null) {
-        mp.setVolume(100, 100);
-        mp.start();
-        mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-          @Override
-          public void onCompletion(MediaPlayer mp) {
-            mp.release();
-          }
-        });
-      }
+      Log.d("NewVoice", "background");
+        try {
+            Uri alarmRingtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            Ringtone ringtone = RingtoneManager.getRingtone(getApplicationContext(), alarmRingtoneUri);
+            ringtone.play();
+            Log.d("NewVoice", "playing sound");
+        } catch (Exception e) {
+            Log.e("NewVoice", e.getLocalizedMessage());
+            e.printStackTrace();
+        }
       // If background isolate is not running yet, put message in queue and it will be handled
       // when the isolate starts.
       if (!isIsolateRunning.get()) {
