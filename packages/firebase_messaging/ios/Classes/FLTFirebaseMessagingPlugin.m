@@ -83,6 +83,9 @@ static NSObject<FlutterPluginRegistrar> *_registrar;
       if (@available(iOS 12, *)) {
         isAtLeastVersion12 = [NSNumber numberWithBool:YES];
         if ([provisional boolValue]) authOptions |= UNAuthorizationOptionProvisional;
+        if ([arguments[@"critical"] boolValue]) {
+            authOptions |= UNAuthorizationOptionCriticalAlert;
+        }
       } else {
         isAtLeastVersion12 = [NSNumber numberWithBool:NO];
       }
