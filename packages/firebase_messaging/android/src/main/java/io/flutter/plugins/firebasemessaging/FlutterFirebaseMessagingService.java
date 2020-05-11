@@ -101,19 +101,6 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
      */
     @Override
     public void onMessageReceived(final RemoteMessage remoteMessage) {
-        // If application is running in the foreground use local broadcast to handle message.
-        // Otherwise use the background isolate to handle message.
-        Intent intent = new Intent(ACTION_REMOTE_MESSAGE);
-        intent.putExtra(EXTRA_REMOTE_MESSAGE, remoteMessage);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-        // If background isolate is not running yet, put message in queue and it will be handled
-        // when the isolate starts.
-        playSound();
-        if(remoteMessage.getNotification() == null) {
-            Map<String, String> data = remoteMessage.getData();
-            showNotification(data.get("title"), data.get("body"));
-        }
-
         if (!isIsolateRunning.get()) {
             backgroundMessageQueue.add(remoteMessage);
         } else {
@@ -133,56 +120,22 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
                 Log.i(TAG, "Exception waiting to execute Dart callback", ex);
             }
         }
-    }
 
-    void showNotification(String title, String message) {
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID,
-                    NOTIFICATION_CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription(NOTIFICATION_CHANNEL_DESC);
-            mNotificationManager.createNotificationChannel(channel);
-        }
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getApplicationContext(), NOTIFICATION_CHANNEL_ID)
-                .setContentTitle(title) // title for notification
-                .setContentText(message)// message for notification
-                .setSmallIcon(android.R.mipmap.sym_def_app_icon)
-                .setAutoCancel(true); // clear notification after click
-        PackageManager pm = backgroundContext.getPackageManager();
-        Intent intent = pm.getLaunchIntentForPackage(backgroundContext.getPackageName());
-        PendingIntent pi = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(pi);
-        mNotificationManager.notify(0, mBuilder.build());
-    }
+        if(remoteMessage.getNotification() == null) {
+            Map<String, String> data = remoteMessage.getData();
 
-    private void playSound() {
-        try {
-            Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-            final MediaPlayer mp = MediaPlayer.create(getBaseContext(), alert);
-            if(mp !=null) {
-                mp.setVolume(100, 100);
-                mp.start();
-                new Handler(getMainLooper())
-                        .postDelayed(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mp.stop();
-                                    }
-                                }, 60 * 60 * 4);
-                mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-                        mp.release();
-                    }
-                });
-            }
-            Log.d("NewVoice", "playing sound");
-        } catch (Exception e) {
-            Log.e("NewVoice", e.getLocalizedMessage());
-            e.printStackTrace();
+            new Handler(getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(ACTION_REMOTE_MESSAGE);
+                    intent.putExtra(EXTRA_REMOTE_MESSAGE, remoteMessage);
+                    LocalBroadcastManager.getInstance(backgroundContext).sendBroadcast(intent);
+                }
+            }, 2000);
+
+            PackageManager pm = backgroundContext.getPackageManager();
+            Intent startIntent = pm.getLaunchIntentForPackage(backgroundContext.getPackageName());
+            backgroundContext.startActivity(startIntent);
         }
     }
 
