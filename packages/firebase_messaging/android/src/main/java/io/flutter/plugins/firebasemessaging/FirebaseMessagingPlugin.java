@@ -291,14 +291,14 @@ public class FirebaseMessagingPlugin extends BroadcastReceiver
       FirebaseMessaging.getInstance().setAutoInitEnabled(isEnabled);
       result.success(null);
     } else if("requestDrawOverlayPermission".equals(call.method)) {
-      if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         if (!Settings.canDrawOverlays(applicationContext)) {
           openDrawOverlaysSettings();
         }
       }
       result.success(null);
     } else if("hasDrawOverlayPermission".equals(call.method)) {
-      if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         result.success(Settings.canDrawOverlays(applicationContext));
       } else {
         result.success(true);
