@@ -312,6 +312,7 @@ public class FirebaseMessagingPlugin extends BroadcastReceiver
   public void openDrawOverlaysSettings() {
     Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
             Uri.parse("package:" + applicationContext.getPackageName()));
+    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     applicationContext.startActivity(intent);
   }
 
