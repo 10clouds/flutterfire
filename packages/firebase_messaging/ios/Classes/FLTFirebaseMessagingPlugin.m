@@ -265,6 +265,20 @@ static NSObject<FlutterPluginRegistrar> *_registrar;
   // therefore the next line is setting it to 1 first before clearing it again
   // to remove all
   // notifications.
+
+
+[[UNUserNotificationCenter currentNotificationCenter]
+getDeliveredNotificationsWithCompletionHandler:^(NSArray<UNNotification *> * _Nonnull notifications) {
+        @try {
+            for (UNNotification* notification in notifications) {
+                NSDictionary *userInfo = notification.request.content.userInfo;
+                [_channel invokeMethod:@"onMessage" arguments:userInfo];
+              }
+
+            } @catch (NSException *exception){
+
+            }
+        }];
   application.applicationIconBadgeNumber = 1;
   application.applicationIconBadgeNumber = 0;
 }
